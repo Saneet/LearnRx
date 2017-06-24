@@ -1,6 +1,6 @@
-.gradle/
 .idea/
+.gradle/
+*/.DS_Store
+.DS_Store
+*/main.iml
 build/
-gradle/
-gradlew
-gradlew.bat
