@@ -5,11 +5,12 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class RxBasicsTest {
 
@@ -29,41 +30,75 @@ public class RxBasicsTest {
     }
 
     @Test
-    public void listenToSingleSubscriber() {
+    public void listenToObservable() {
         when(random.nextInt()).thenReturn(6);
 
-        subject.listenToSingleSubscriber();
+        subject.listenToObservable();
 
+        verify(observableFactory).singleItemObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isNotEmpty();
         assertThat(subject.getOutputs().get(0)).isEqualTo(6);
     }
 
     @Test
-    public void listenToSequentialObservable() {
-        when(random.nextInt()).thenReturn(6, 7);
+    public void chainObservables() {
+        when(random.nextInt()).thenReturn(6, 7, 8);
 
-        subject.listenToSequentialCall();
+        subject.chainObservables();
 
-        assertThat(subject.getOutputs().get(0)).isEqualTo(13);
+        verify(observableFactory).singleItemObservable();
+        verify(observableFactory).additionObservable(6);
+        verify(observableFactory).subtractionObservable(13);
+        verify(observableFactory).convertToString(5);
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isNotEmpty();
+        assertThat(subject.getOutputs().get(0)).isEqualTo("5");
     }
 
     @Test
-    public void listenTo3SequentialObservable() {
-        when(random.nextInt()).thenReturn(6, 7, 8);
+    public void modifyEmissionsReturnList() {
+        when(random.nextInt()).thenReturn(6, 7, 8, 9, 0);
 
-        subject.listenTo3SequentialCall();
+        List<String> result = subject.modifyEmissionsReturnList();
 
-        assertThat(subject.getOutputs().get(0)).isEqualTo(5);
+        verify(observableFactory).seriesObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(result).isEqualTo(Arrays.asList("6", "7", "8", "9", "0"));
     }
 
-    //flatmap transformation
-    //map transformation
-    //map.asList()
-    //concurrentSubscibers - zip and merge
-    //all subjects
-    //replay refcount
-    //manual caching
-    //cache()
-    //cache() vs replay()
-    //debounce
-    //cancelling subscription halfway
+    @Test
+    public void chainWithCarryOverValue() {
+        when(random.nextInt()).thenReturn(5, 6);
+
+        subject.chainWithCarryOverValue();
+        giveItASecond();
+        giveItASecond();
+
+        verify(observableFactory, times(2)).delayObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isNotEmpty();
+        assertThat(subject.getOutputs().get(0)).isEqualTo(11);
+    }
+
+    @Test
+    public void parallelObservables() {
+        when(random.nextInt()).thenReturn(5, 6);
+
+        subject.parallelObservables();
+        giveItASecond();
+
+        verify(observableFactory, times(2)).delayObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isNotEmpty();
+        assertThat(subject.getOutputs().get(0)).isEqualTo(11);
+    }
+
+    private void giveItASecond() {
+        try {
+            Thread.sleep(1100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

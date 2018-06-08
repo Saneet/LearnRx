@@ -1,32 +1,33 @@
 package com.saneet.LearnRx;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class RxBasics {
-    private ArrayList<Integer> outputs = new ArrayList<Integer>();
+    private ArrayList<Object> outputs = new ArrayList<>();
     private ObservableFactory observableFactory;
 
     public RxBasics(ObservableFactory observableFactory) {
         this.observableFactory = observableFactory;
     }
 
-    public void listenToSingleSubscriber() {
-        observableFactory.singleObservable().subscribe(i -> outputs.add(i));
+    public void listenToObservable() {
     }
 
-    public void listenToSequentialCall() {
-        observableFactory.singleObservable()
-                .flatMap(observableFactory::additionObservable)
-                .subscribe(i -> outputs.add(i));
+    public void chainObservables() {
     }
 
-    public void listenTo3SequentialCall() {
-        observableFactory.singleObservable()
-                .flatMap(observableFactory::additionObservable)
-                .flatMap(observableFactory::subtractionObservable)
-                .subscribe(i -> outputs.add(i));
+    public List<String> modifyEmissionsReturnList() {
+        return new ArrayList<>();
     }
-    public ArrayList<Integer> getOutputs() {
+
+    public void chainWithCarryOverValue() {
+    }
+
+    public void parallelObservables() {
+    }
+
+    public ArrayList<Object> getOutputs() {
         return outputs;
     }
 }
