@@ -1,6 +1,7 @@
 package com.saneet.LearnRx;
 
 import rx.Observable;
+import rx.schedulers.Schedulers;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,8 @@ public class ObservableFactory {
     }
 
     public Observable<Integer> delayObservable() {
-        return Observable.just(random.nextInt()).delay(1, TimeUnit.SECONDS);
+        return Observable.fromCallable(() -> random.nextInt())
+                .delay(1, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.newThread());
     }
 }
