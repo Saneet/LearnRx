@@ -10,7 +10,8 @@ Open RxBasicsTest.java and write code to pass all the tests.
 
 ## Tips
 1. The test title tells the concept it is trying to demonstrate.
-2. The test will tell you exactly...
+2. The test will tell exactly...
     1. which functions to call.
     2. what parameters to pass.
     3. when to call those functions.
+    4. what output it expects.
