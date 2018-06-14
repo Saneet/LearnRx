@@ -52,18 +52,19 @@ public class RxBasicsTest {
 
         verify(observableFactory).singleItemObservable();
         verify(observableFactory).additionObservable(6);
-        verify(observableFactory).subtractionObservable(13);
-        verify(observableFactory).convertToString(5);
+        verify(observableFactory).subtractionObservable(6 + 7);
+        verify(observableFactory).convertToString(6 + 7 - 8);
         verifyNoMoreInteractions(observableFactory);
         assertThat(subject.getOutputs()).isNotEmpty();
         assertThat(subject.getOutputs().get(0)).isEqualTo("5");
     }
 
     @Test
-    public void modifyEmissionsReturnList() {
+    public void modifyEmissions() {
         when(random.nextInt()).thenReturn(6, 7, 8, 9, 0);
 
-        List<String> result = subject.modifyEmissionsReturnList();
+        List<String> result = new ArrayList<>();
+        subject.modifyEmissions().subscribe(result::add);
 
         verify(observableFactory).seriesObservable();
         verifyNoMoreInteractions(observableFactory);
@@ -71,27 +72,77 @@ public class RxBasicsTest {
     }
 
     @Test
+    public void combineEmissions() {
+        when(random.nextInt()).thenReturn(6, 7, 8, 9, 10);
+
+        List<Integer> result = new ArrayList<>();
+        subject.combineEmmissions().subscribe(result::add);
+
+        verify(observableFactory).seriesObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(result.get(0)).isEqualTo(6 + 7 + 8 + 9 + 10);
+    }
+
+    @Test
+    public void convertAsyncToSync() {
+        when(random.nextInt()).thenReturn(6, 7, 8, 9, 0);
+
+        List<Integer> result = subject.convertAsyncToSync();
+
+        verify(observableFactory).seriesObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(result).isEqualTo(Arrays.asList(6, 7, 8, 9, 0));
+    }
+
+    @Test
     public void chainWithCarryOverValue_useSameOperatorFromChainObservablesTest() {
         when(random.nextInt()).thenReturn(5, 6);
 
         subject.chainWithCarryOverValue();
+
         verify(observableFactory).delayObservable();
         reset(observableFactory);
 
         giveItASecond();
+        verify(observableFactory).delayObservable();
         giveItASecond();
 
-        verify(observableFactory).delayObservable();
         verifyNoMoreInteractions(observableFactory);
         assertThat(subject.getOutputs()).isNotEmpty();
         assertThat(subject.getOutputs().get(0)).isEqualTo(5 + 6);
     }
 
     @Test
-    public void parallelObservables() {
+    public void combineObservables() {
         when(random.nextInt()).thenReturn(5, 6);
 
-        subject.parallelObservables();
+        subject.combineObservables();
+        giveItASecond();
+        giveItASecond();
+
+        verify(observableFactory, times(2)).delayObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isEqualTo(Arrays.asList(5, 6));
+    }
+
+    @Test
+    public void parallelObservables_takeAsTheyCome() {
+        when(random.nextInt()).thenReturn(5, 6);
+
+        subject.parallelObservables_takeAsTheyCome();
+        giveItASecond();
+
+        verify(observableFactory, times(2)).delayObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(subject.getOutputs()).isNotEmpty();
+        assertThat(subject.getOutputs()).isEqualTo(Arrays.asList(5, 6));
+    }
+
+    @Test
+    public void parallelObservables_groupEmissions() {
+        when(random.nextInt()).thenReturn(5, 6);
+
+        subject.parallelObservables_groupEmissions();
         giveItASecond();
 
         verify(observableFactory, times(2)).delayObservable();
@@ -179,6 +230,54 @@ public class RxBasicsTest {
                 "Fourth -> 6",
                 "Fifth -> 6",
                 "Sixth -> 7"));
+    }
+
+    @Test
+    public void multipleSubscribersScenario3_sameItemWhileSubscribed_newItemOnDisconnectList() {
+        when(random.nextInt()).thenReturn(5, 6, 7);
+
+        Observable<Integer> observable = subject.multipleSubscribersScenario4();
+        assertThat(observable).isNotNull();
+
+        List<String> outputs = new ArrayList<>();
+        observable.subscribe(i -> outputs.add("First -> " + i));
+        observable.subscribe(i -> outputs.add("Second -> " + i));
+        observable.subscribe(i -> outputs.add("Third -> " + i));
+
+        giveItASecond();
+
+        observable.subscribe(i -> outputs.add("Fourth -> " + i));
+        observable.subscribe(i -> outputs.add("Fifth -> " + i));
+
+        giveItASecond();
+
+        observable.subscribe(i -> outputs.add("Sixth -> " + i));
+
+        giveItASecond();
+
+        verify(observableFactory).delayListObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(outputs).containsAll(Arrays.asList("First -> 5",
+                "Second -> 5",
+                "Third -> 5",
+                "Fourth -> 6",
+                "Fifth -> 6",
+                "Sixth -> 7"));
+    }
+
+    @Test
+    public void multiThreading() {
+        List<String> results = new ArrayList<>();
+        subject.multiThreading()
+                .subscribe(i -> {
+                    results.add(i);
+                    results.add(Thread.currentThread().getName());
+                });
+
+        verify(observableFactory).threadNameObservable();
+        verifyNoMoreInteractions(observableFactory);
+        assertThat(results.get(0)).startsWith("RxComputationScheduler");
+        assertThat(results.get(1)).startsWith("RxIoScheduler");
     }
 
     private void giveItASecond() {
